@@ -1,0 +1,9 @@
+{
+  "wallet": "0x4f80b5c475fced34fc9a07ffccf39e1adc1406bf",
+  "note": "MetaMask test from the production app (trialpledge-bars26.vercel.app): the tester backs STEP 1 (NCT03548935) with a strict pledge that does not count delay certifications, names their own wallet as beneficiary, reports the results as late, then concedes as the pledger.",
+  "steps": [
+    ["Back NCT03548935: results within 365 days, delay certification not counted, payout 1 GEN, beneficiary = own wallet", "3 GEN", "pledge_5; the 2 registered primary outcomes frozen", "0x84c5fd69ddcd009a6c32ad5d2273a6e457c0238c25bf8802ab780894cd9ed429"],
+    ["Report: results are late", "0.1 GEN", "claim_7 BREACHED (late): results first posted 2021-08-11, 134 days after the pledged deadline 2021-03-30", "0x79b140acba08e508370db4befce1791515ea153faf9c3f9eb29754b8602697d7"],
+    ["Concede and pay now (as the pledger)", "", "paid: 0.9 GEN to the beneficiary, 0.1 GEN reward + 0.1 GEN stake to the reporter", "0x0ed747da7bb7979257a71205d04379e4369d9282c1e6ff2ee60df9b2b660cbe1"]
+  ]
+}
