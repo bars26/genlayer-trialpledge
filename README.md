@@ -41,7 +41,8 @@ results clock without a wallet. Writes need MetaMask on GenLayer Studio (chain 6
 
 `scripts/demo.mjs` ran demo pledges (made by a test wallet, not by the sponsors) against real registry records and
 real publications, with real validator consensus and LLM calls. Every transaction hash is in
-[`docs/REPRODUCTION.md`](docs/REPRODUCTION.md).
+[`docs/REPRODUCTION.md`](docs/REPRODUCTION.md). A MetaMask test from the live app (a strict pledge on STEP 1, a "results are late"
+report ruled 134 days late, and the pledger conceding) is recorded at the end of the same file.
 
 | Pledge | Claim | What validators read | Ruling and stored reason |
 |---|---|---|---|
