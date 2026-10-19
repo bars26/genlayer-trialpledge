@@ -30,7 +30,13 @@ export function Timeline({
   const posted = resultsPosted ? dayMs(resultsPosted) : NaN;
   const marker = Number.isNaN(posted) ? today : posted;
   const end = Math.max(due, marker) + (due - start) * 0.08;
-  const pos = (t: number) => `${Math.min(100, Math.max(0, ((t - start) / (end - start)) * 100))}%`;
+  const pct = (t: number) => Math.min(100, Math.max(0, ((t - start) / (end - start)) * 100));
+  const pos = (t: number) => `${pct(t)}%`;
+  // Tick labels closer than about a third of the ruler would overlap, so the later one drops below the bar.
+  const crowded = (a: number, b: number) => pct(b) - pct(a) < 34;
+  const deadlineBelow = crowded(start, dayMs(deadline));
+  const extendedBelow = !!extended && !deadlineBelow && crowded(dayMs(deadline), due);
+  const deadlineAlign = extended && !deadlineBelow ? "center" : pct(dayMs(deadline)) < 70 ? "start" : "end";
   const late = marker > due;
   const markerColor = Number.isNaN(posted) ? (late ? "#E0533D" : "#F2A541") : late ? "#E0533D" : "#0F9D8A";
   const markerLabel = Number.isNaN(posted) ? `today, no results${late ? "" : " yet"}` : `results posted ${resultsPosted}`;
@@ -48,8 +54,8 @@ export function Timeline({
         <div className="absolute inset-y-0 right-0 rounded-r-full bg-[#FDEAE6]" style={{ left: pos(due) }} />
 
         <Tick at={pos(start)} label={`completed ${completion}`} align="start" />
-        <Tick at={pos(dayMs(deadline))} label={`deadline ${deadline}`} align={extended ? "center" : "end"} />
-        {extended && <Tick at={pos(due)} label={`extended to ${extended}`} align="end" />}
+        <Tick at={pos(dayMs(deadline))} label={`deadline ${deadline}`} align={deadlineAlign} below={deadlineBelow} />
+        {extended && <Tick at={pos(due)} label={`extended to ${extended}`} align="end" below={extendedBelow} />}
 
         <div className="absolute -top-1.5 -translate-x-1/2" style={{ left: pos(marker) }}>
           <div className="h-6 w-6 rounded-full border-[3px] border-white shadow" style={{ background: markerColor }} />
@@ -69,12 +75,12 @@ export function Timeline({
   );
 }
 
-function Tick({ at, label, align }: { at: string; label: string; align: "start" | "center" | "end" }) {
+function Tick({ at, label, align, below = false }: { at: string; label: string; align: "start" | "center" | "end"; below?: boolean }) {
   const shift = align === "start" ? "" : align === "center" ? "-translate-x-1/2" : "-translate-x-full";
   return (
     <>
       <div className="absolute -top-1 h-5 w-0.5 bg-[#0F2A3D]/40" style={{ left: at }} />
-      <div className={`absolute -top-6 hidden sm:block whitespace-nowrap text-[11px] text-muted-foreground ${shift}`} style={{ left: at }}>
+      <div className={`absolute ${below ? "top-5" : "-top-6"} hidden sm:block whitespace-nowrap text-[11px] text-muted-foreground ${shift}`} style={{ left: at }}>
         {label}
       </div>
     </>
