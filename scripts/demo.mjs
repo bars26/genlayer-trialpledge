@@ -75,7 +75,7 @@ async function write(c, who, functionName, args, value = 0n, { expectError = fal
       try { returned = JSON.parse(returned); } catch {}
       const row = {
         who,
-        call: `${functionName}(${args.map((a) => (typeof a === "bigint" ? `${Number(a) / 1e18} GEN` : JSON.stringify(a)).slice(0, 40)).join(", ")})`,
+        call: `${functionName}(${args.map((a) => (typeof a === "bigint" ? `${Number(a) / 1e18} GEN` : JSON.stringify(a)).slice(0, 60)).join(", ")})`,
         value: (Number(value) / 1e18).toString(),
         hash,
         status: receipt.statusName ?? receipt.status_name ?? "ACCEPTED",
