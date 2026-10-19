@@ -1,0 +1,10 @@
+{
+  "name": "TrialPledge",
+  "short_name": "TrialPledge",
+  "description": "Clinical-trial transparency pledges, backed by GEN and ruled by GenLayer validators",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7FBFA",
+  "theme_color": "#F7FBFA",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
