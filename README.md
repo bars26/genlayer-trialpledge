@@ -80,6 +80,10 @@ NCT07219953 ending 2029-12-31 (before its latest results deadline plus 30 days),
 reporter and the beneficiary trying to settle a breach before the window. The contract's balance was reconciled with
 `totals()` (active bonds plus open stakes) at four points of the run.
 
+A MetaMask test from the live app on this contract is recorded at the end of the same file: a strict STEP 1 pledge
+with a bond of exactly 2 × payout, a "results are late" report and a paper report open at the same time, the pledger
+conceding the breach (paid in full) and the reporter accepting the kept paper ruling.
+
 ## Who can do what (and the attacks this blocks)
 
 | Rule | Why |

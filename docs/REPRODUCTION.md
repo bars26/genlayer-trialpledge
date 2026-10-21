@@ -48,7 +48,7 @@ full and settlement order cannot matter. `coverage(pledge_id)` as read during th
 | after P1 settles | 9.20 | 0.00 | 9.20 | 9.20 | match |
 | P2 and P3 claims open | 21.20 | 0.40 | 21.60 | 21.60 | match |
 | end of run | 17.20 | 0.00 | 17.20 | 17.20 | match |
-| now (when this file was generated) | 17.20 | 0.00 | 17.20 | 17.20 | match |
+| now (when this file was generated) | 18.30 | 0.00 | 18.30 | 18.30 | match |
 
 ## Evidence packets
 
@@ -87,6 +87,18 @@ reporter   19.40 GEN
 fund       6.40 GEN
 bystander  1.00 GEN
 ```
+
+## Wallet test from the live app
+
+MetaMask test from the production app (trialpledge-bars26.vercel.app) on the v2 contract: the tester backs STEP 1 (NCT03548935) with a strict pledge whose bond is exactly 2 x payout, files both promises so two claims are open at once, concedes the late results as the pledger and accepts the kept paper ruling as the reporter. Wallet `0x4f80b5c475fced34fc9a07ffccf39e1adc1406bf`. Every transaction is FINALIZED with execution result SUCCESS.
+
+| Step | GEN sent | Result | Tx |
+|---|---|---|---|
+| Back NCT03548935: results within 365 days, delay certification not counted, payout 1 GEN, bond 2 GEN (2 x payout), beneficiary = own wallet | 2 GEN | pledge_5; 2 registered primary outcomes frozen; results due by 2021-03-30, open until 2028-10-21 | [`0xb9d4e2af…`](https://explorer-studio.genlayer.com/tx/0xb9d4e2afc30eb34cd8fc9a801c6539a69dab5d8c4d82f268b3318c58f3c94ea1) |
+| Report: results are late | 0.1 GEN | claim_9 BREACHED (late): first posted 2021-08-11, 134 days after the pledged deadline 2021-03-30 | [`0x401c0037…`](https://explorer-studio.genlayer.com/tx/0x401c0037269c998e50e5a0f8e40b89312098bd5a8161544bbb6508d8251e9615) |
+| Report the paper 10.1056/NEJMoa2032183 while claim_9 is still open | 0.1 GEN | claim_10 KEPT (reported_as_registered); two claims open on one pledge, the bond covering both promises | [`0xdbccdda6…`](https://explorer-studio.genlayer.com/tx/0xdbccdda6f6743c83d31e574ae9ea5b52881ba0b539936f9e31fd6bdac7fe240a) |
+| Concede and pay now (pledger) on claim_9 |  | paid in full: 0.9 GEN to the beneficiary, 0.1 GEN reward + 0.1 GEN stake to the reporter (transfers 0xd220fddb…, 0x4b35a410…) | [`0x112637bc…`](https://explorer-studio.genlayer.com/tx/0x112637bc359f2c7a1348caea7de96beed9f4c5049a90edf17b4c7dcfc063bd5b) |
+| Accept the ruling now (reporter) on claim_10 |  | stake to bond; the paper promise is ruled kept and 10.1056/nejmoa2032183 becomes the main report; bond 1.1 GEN, nothing left to pay | [`0xc0812bd7…`](https://explorer-studio.genlayer.com/tx/0xc0812bd7fb65e7ead2787dee745d9555c93e9b46303f6ba44de2416e232abf57) |
 
 
 ## Every transaction
