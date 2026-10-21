@@ -7,12 +7,14 @@ import {
   OUTCOME_TEXT,
   VERDICT_STYLE,
   doiUrl,
+  evidenceOf,
   factsOf,
   formatGen,
   sameAddress,
   timelineOf,
   windowLeftSeconds,
   type Claim,
+  type EvidencePacket,
   type Pledge,
 } from "@/lib/contracts/types";
 import { formatAddress, useWallet } from "@/lib/genlayer/wallet";
@@ -29,6 +31,7 @@ export function ClaimCard({ claim, pledge }: { claim: Claim; pledge: Pledge }) {
   const [statement, setStatement] = useState("");
   const f = factsOf(claim);
   const steps = timelineOf(claim);
+  const packets = evidenceOf(claim);
   const left = windowLeftSeconds(claim, now);
   const open = claim.state === "pending";
   const breach = claim.verdict === "BREACHED";
@@ -74,8 +77,16 @@ export function ClaimCard({ claim, pledge }: { claim: Claim; pledge: Pledge }) {
             <Fact k="Paper" v={f.paper_title || "—"} />
             <Fact k="Registered primary outcomes compared" v={String(f.outcome_count ?? "—")} />
             <Fact k="Validators' answer" v={f.answer || "not asked (decided in code)"} />
-            <Fact k="Source" v="Europe PMC (title, abstract, registry link)" />
+            <Fact k="Abstract names a primary outcome" v={f.primary_named ? "yes" : "no"} />
+            <Fact k="First published" v={f.first_published || "—"} />
+            <Fact k="Source" v="Europe PMC (title, abstract, registry link); doi.org when not indexed" />
           </dl>
+        )}
+        {packets.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="font-medium text-foreground">Evidence packets (one per assessment, stored on-chain)</p>
+            {packets.map((e, i) => <Packet key={i} n={i + 1} e={e} />)}
+          </div>
         )}
         {claim.statement_url && (
           <p className="mt-2">
@@ -127,6 +138,42 @@ export function ClaimCard({ claim, pledge }: { claim: Claim; pledge: Pledge }) {
             </Button>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+/** What one assessment read, with the hashes that commit to it. */
+function Packet({ n, e }: { n: number; e: EvidencePacket }) {
+  const link = (href?: string, text?: string) =>
+    href ? <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#0B7F70] break-all hover:underline">{text ?? href}</a> : "—";
+  const hash = (h?: string) => <span className="mono break-all">{h ? `${h.slice(0, 16)}…` : "—"}</span>;
+  return (
+    <div className="rounded-lg border border-border bg-white/70 p-2 space-y-1">
+      <p className="text-muted-foreground">#{n} read {e.read_at?.replace("T", " ")} UTC · packet {hash(e.packet_sha256)}</p>
+      <p>Record: {link(e.record)} · API: {link(e.source, "query")}</p>
+      {e.fields && (
+        <p>
+          Fields read {hash(e.fields_sha256)} · registry last updated {e.last_update_posted || "—"} · version {e.version_holder || "—"}
+        </p>
+      )}
+      {e.abstract_sha256 && (
+        <>
+          <p>
+            PMID {e.pmid || "—"}{e.journal ? ` · ${e.journal}` : ""} · first published {e.first_published || "—"} · registry link hits {e.linkage?.hits ?? "—"} ·
+            abstract {hash(e.abstract_sha256)} · frozen outcomes {hash(e.registered_outcomes_sha256)}
+          </p>
+          <details>
+            <summary className="cursor-pointer text-muted-foreground">Abstract exactly as evaluated ({e.abstract?.length ?? 0} characters)</summary>
+            <p className="mt-1 whitespace-pre-wrap">{e.abstract}</p>
+          </details>
+        </>
+      )}
+      {e.doi_handle && <p>doi.org handle: {link(e.doi_handle.url)} (HTTP {e.doi_handle.status})</p>}
+      {e.statement && (
+        <p>
+          Pledger statement {link(e.statement.url)} · {e.statement.chars} characters · {hash(e.statement.sha256)} · “{e.statement.excerpt.slice(0, 200)}”
+        </p>
       )}
     </div>
   );

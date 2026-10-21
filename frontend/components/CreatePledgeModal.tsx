@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { MIN_PAYOUT_WEI, NCT_RE, formatGen, parseGen, todayUtc, type TrialLookup } from "@/lib/contracts/types";
+import { MIN_PAYOUT_WEI, NCT_RE, REPORT_DAYS, dayMs, formatGen, parseGen, todayUtc, type TrialLookup } from "@/lib/contracts/types";
 import { usePledgeWrite } from "@/lib/hooks/useTrialPledge";
 import { useWallet } from "@/lib/genlayer/wallet";
 import { Button } from "./ui/button";
@@ -47,13 +47,25 @@ export function CreatePledgeModal({ open, onOpenChange, nct: initialNct }: { ope
   const payout = parseGen(f.payout);
   const bond = parseGen(f.bond);
   const days = Number(f.days);
+  // Same rule as the contract: coverage must outlive the latest results deadline plus the report period.
+  const latest = trial?.completion && /^\d{4}-\d{2}/.test(trial.completion) && Number.isInteger(days)
+    ? dayMs(trial.completion) + (f.honor ? Math.max(days, 730) : days) * 86_400_000
+    : NaN;
+  const minExpires = Number.isNaN(latest) ? "" : new Date(latest + REPORT_DAYS * 86_400_000).toISOString().slice(0, 10);
+  // Start the end date at the earliest the contract accepts when the default is too early.
+  useEffect(() => {
+    if (minExpires && f.expires < minExpires) setF((x) => ({ ...x, expires: minExpires }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minExpires]);
   const problems = [
     !NCT_RE.test(f.nct.trim()) && "Enter a ClinicalTrials.gov number like NCT03548935.",
     trial && !trial.found && "That trial is not on ClinicalTrials.gov.",
     trial?.found && !trial.outcomes?.length && "That trial lists no primary outcome.",
     !(Number.isInteger(days) && days >= 30 && days <= 1095) && "The deadline must be 30 to 1095 days.",
     !(payout && payout >= MIN_PAYOUT_WEI) && "The payout must be at least 1 GEN.",
-    !(bond && payout && bond >= payout) && "The bond must cover at least one payout.",
+    !(bond && payout && bond >= 2n * payout) && "The bond must cover both promises: at least 2 × the payout.",
+    trial?.found && !minExpires && "That trial lists no primary completion date, so no results deadline can be set.",
+    minExpires && f.expires < minExpires && `The pledge must run until ${minExpires} or later: the latest results deadline plus ${REPORT_DAYS} days to report.`,
     !/^0x[0-9a-fA-F]{40}$/.test(f.beneficiary.trim()) && "Enter the beneficiary's wallet address.",
     f.expires < todayUtc() && "The pledge cannot expire in the past.",
   ].filter(Boolean) as string[];
@@ -100,6 +112,7 @@ export function CreatePledgeModal({ open, onOpenChange, nct: initialNct }: { ope
             <div className="space-y-1">
               <Label>Pledge open until</Label>
               <Input type="date" value={f.expires} onChange={set("expires")} />
+              {minExpires && <p className="text-[11px] text-muted-foreground">Earliest: {minExpires} (latest results deadline + {REPORT_DAYS} days to report).</p>}
             </div>
             <div className="space-y-1">
               <Label>Payout per broken promise (GEN)</Label>
@@ -108,6 +121,7 @@ export function CreatePledgeModal({ open, onOpenChange, nct: initialNct }: { ope
             <div className="space-y-1">
               <Label>Bond (GEN)</Label>
               <Input value={f.bond} onChange={set("bond")} inputMode="decimal" />
+              <p className="text-[11px] text-muted-foreground">At least 2 × payout, so both promises are always paid in full.</p>
             </div>
           </div>
           <label className="flex items-start gap-2 text-sm">
@@ -117,6 +131,11 @@ export function CreatePledgeModal({ open, onOpenChange, nct: initialNct }: { ope
               approval). Untick for a stricter promise.
             </span>
           </label>
+          <p className="rounded-lg bg-[#F3FAF8] px-3 py-2 text-xs text-muted-foreground">
+            Your bond stays locked after the end date until the results promise has matured (results posted, or the deadline and {REPORT_DAYS} days to
+            report have passed), checked again on ClinicalTrials.gov when you withdraw; at the latest three years after the end date. The publication
+            promise is watched until the end date.
+          </p>
           <div className="space-y-1">
             <Label>Beneficiary wallet</Label>
             <div className="flex gap-2">

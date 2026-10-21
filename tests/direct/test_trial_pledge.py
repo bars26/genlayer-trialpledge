@@ -1,5 +1,6 @@
 """Direct-mode tests for the TrialPledge contract."""
 
+import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -11,9 +12,10 @@ CONTRACT_PATH = "contracts/trial_pledge.py"
 GEN = 10**18
 NCT = "NCT03548935"
 DOI = "10.1056/nejmoa2032183"
-CTGOV_RE = rf"^https://clinicaltrials\.gov/api/v2/studies/{NCT}$"
+CTGOV_RE = r"^https://clinicaltrials\.gov/api/v2/studies/NCT\d{8}$"
 EPMC_CORE_RE = r"^https://www\.ebi\.ac\.uk/europepmc/webservices/rest/search\?format=json&resultType=core&query=.*"
 EPMC_LINK_RE = r"^https://www\.ebi\.ac\.uk/europepmc/webservices/rest/search\?format=json&resultType=idlist&query=.*"
+DOI_HANDLE_RE = r"^https://doi\.org/api/handles/.*"
 STATEMENT_URL = "https://example.org/sponsor/statement.html"
 OUTCOMES = [
     {"measure": "Change in Body Weight (%)", "timeFrame": "Week 0, week 68"},
@@ -28,8 +30,17 @@ ABSTRACT = (
 )
 
 
+def _sha(text):
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _days_ago(n):
+    return (datetime.now(timezone.utc) - timedelta(days=n)).strftime("%Y-%m-%d")
+
+
 def _study(completion="2020-03-30", ctype="ACTUAL", results="2021-08-11", cert="2021-03-03", outcomes=None):
-    status = {"primaryCompletionDateStruct": {"date": completion, "type": ctype}}
+    status = {"primaryCompletionDateStruct": {"date": completion, "type": ctype},
+              "lastUpdatePostDateStruct": {"date": "2024-05-02", "type": "ACTUAL"}}
     if results:
         status["resultsFirstPostDateStruct"] = {"date": results, "type": "ACTUAL"}
     if cert:
@@ -41,6 +52,7 @@ def _study(completion="2020-03-30", ctype="ACTUAL", results="2021-08-11", cert="
             "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Novo Nordisk A/S"}},
             "outcomesModule": {"primaryOutcomes": OUTCOMES if outcomes is None else outcomes},
         },
+        "derivedSection": {"miscInfoModule": {"versionHolder": "2025-10-17"}},
         "hasResults": bool(results),
     }
 
@@ -54,11 +66,14 @@ def _mock_json(direct_vm, pattern, body, status=200):
 
 
 def _setup(direct_vm, study=None, ct_status=200, paper=True, linked=1, abstract=ABSTRACT, epmc_status=200,
-           answer="MAIN_CONSISTENT", statement=None):
+           answer="MAIN_CONSISTENT", statement=None, published="2021-02-10", handle_status=200, handle_code=1):
     direct_vm.clear_mocks()
     _mock_json(direct_vm, CTGOV_RE, _study() if study is None else study, ct_status)
     core = {"resultList": {"result": [{"doi": DOI, "title": "Once-Weekly Semaglutide in Adults with Overweight or Obesity.",
-                                        "abstractText": abstract}] if paper else []}}
+                                        "abstractText": abstract, "pmid": "33567185", "pmcid": "",
+                                        "journalTitle": "The New England journal of medicine",
+                                        "firstPublicationDate": published}] if paper else []}}
+    _mock_json(direct_vm, DOI_HANDLE_RE, {"responseCode": handle_code, "handle": DOI}, handle_status)
     _mock_json(direct_vm, EPMC_LINK_RE, {"hitCount": linked}, epmc_status)
     _mock_json(direct_vm, EPMC_CORE_RE, core, epmc_status)
     if statement is not None:
@@ -114,7 +129,13 @@ def test_pledge_freezes_the_registered_primary_outcomes(direct_vm, direct_deploy
     (dict(payout=GEN // 2), {}, "payout must be at least 1 GEN"),
     (dict(beneficiary="nope"), {}, "beneficiary must be a wallet address"),
     (dict(expires="2020-01-01"), {}, "expires must be a YYYY-MM-DD date that has not passed"),
-    (dict(payout=11 * GEN), {}, "the bond must cover at least one payout"),
+    (dict(payout=6 * GEN), {}, "the bond must cover both promises: at least 2 x payout"),
+    (dict(nct="NCT07219953"), dict(study=_study(completion="2028-04", ctype="ESTIMATED", results="", cert="")),
+     "expires must be 2030-05-30 or later: the latest results deadline (2030-04-30) plus 30 days to report"),
+    (dict(nct="NCT07219953", honor_delay_cert=False, expires="2029-05-29"),
+     dict(study=_study(completion="2028-04", ctype="ESTIMATED", results="", cert="")),
+     "expires must be 2029-05-30 or later: the latest results deadline (2029-04-30) plus 30 days to report"),
+    ({}, dict(study=_study(completion="")), f"{NCT} lists no primary completion date"),
     ({}, dict(ct_status=404), f"{NCT} is not on ClinicalTrials.gov"),
     ({}, dict(ct_status=503), "Could not read ClinicalTrials.gov right now; try again"),
     ({}, dict(study=_study(outcomes=[])), f"{NCT} lists no primary outcome"),
@@ -192,7 +213,7 @@ def test_nothing_due_yet_is_refunded(direct_vm, direct_deploy, direct_alice, dir
     assert contract.get_claims(0, 10) == []
 
 
-@pytest.mark.parametrize("status, verdict, code", [(404, "NOT_COVERED", "not_found"), (503, "UNCLEAR", "unreachable"), (429, "UNCLEAR", "unreachable")])
+@pytest.mark.parametrize("status, verdict, code", [(404, "UNCLEAR", "registry_missing"), (503, "UNCLEAR", "unreachable"), (429, "UNCLEAR", "unreachable")])
 def test_registry_failures(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, status, verdict, code):
     contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob)
     claim = contract.get_claim(_file(direct_vm, contract, pledge_id, direct_charlie, ct_status=status))
@@ -205,6 +226,7 @@ def test_registry_failures(direct_vm, direct_deploy, direct_alice, direct_bob, d
 @pytest.mark.parametrize("answer, verdict, code", [
     ("MAIN_CONSISTENT", "KEPT", "reported_as_registered"),
     ("MAIN_SWITCHED", "BREACHED", "switched"),
+    ("MAIN_CHANGE_DISCLOSED", "NOT_COVERED", "disclosed_change"),
     ("NOT_MAIN_REPORT", "NOT_COVERED", "secondary_report"),
     ("UNCLEAR", "UNCLEAR", "unclear"),
 ])
@@ -217,8 +239,12 @@ def test_publication_goes_to_the_model(direct_vm, direct_deploy, direct_alice, d
 
 
 @pytest.mark.parametrize("setup, verdict, code", [
-    (dict(paper=False), "NOT_COVERED", "paper_not_found"),
+    (dict(paper=False, handle_status=404, handle_code=100), "NOT_COVERED", "doi_not_registered"),
+    (dict(paper=False), "UNCLEAR", "not_indexed"),
+    (dict(paper=False, handle_status=503), "UNCLEAR", "unreachable"),
     (dict(linked=0), "NOT_COVERED", "unlinked"),
+    (dict(linked=0, published=_days_ago(30)), "UNCLEAR", "recent_unlinked"),
+    (dict(abstract=ABSTRACT.replace("The coprimary end points were", "We measured")), "UNCLEAR", "insufficient_detail"),
     (dict(abstract="Too short."), "UNCLEAR", "no_abstract"),
     (dict(epmc_status=503), "UNCLEAR", "unreachable"),
 ])
@@ -251,14 +277,16 @@ def test_filing_input_is_checked_and_refunded(direct_vm, direct_deploy, direct_a
     assert "a paper claim needs the publication's DOI" in _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi="")
     assert "No pledge with id pledge_9" in _file(direct_vm, contract, "pledge_9", direct_charlie, stake=0)
     contract.pledges[pledge_id].expires = "2020-01-01"
-    assert "This pledge expired on 2020-01-01" in _file(direct_vm, contract, pledge_id, direct_charlie)
+    assert "The publication promise was covered until 2020-01-01" in _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi=DOI)
     assert contract.get_claims(0, 10) == []
+    # the results promise stays claimable after expiry, until the bond can leave
+    assert _file(direct_vm, contract, pledge_id, direct_charlie).startswith("claim_")
 
 
 def test_one_open_claim_per_promise(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
     contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob, honor_delay_cert=False)
     first = _file(direct_vm, contract, pledge_id, direct_charlie)
-    assert _file(direct_vm, contract, pledge_id, direct_bob) == f"REFUNDED: {first} is already open for this"
+    assert _file(direct_vm, contract, pledge_id, direct_bob) == f"REFUNDED: {first} is already open for this promise"
     # a paper claim is a different promise and can run at the same time
     assert _file(direct_vm, contract, pledge_id, direct_bob, kind="paper", doi=DOI).startswith("claim_")
 
@@ -276,7 +304,7 @@ def test_breach_pays_beneficiary_and_reporter_once(direct_vm, direct_deploy, dir
     assert int(p.bond) == 6 * GEN and int(p.total_paid) == 4 * GEN and int(p.n_breached) == 1
     last = json.loads(contract.get_claim(claim_id).timeline_json)[-1]
     assert (last["beneficiary"], last["reporter"]) == (str(36 * GEN // 10), str(4 * GEN // 10))
-    assert "already been paid" in _file(direct_vm, contract, pledge_id, direct_charlie)
+    assert "This promise has already been paid from this pledge" in _file(direct_vm, contract, pledge_id, direct_charlie)
 
 
 def test_kept_promise_keeps_the_stake(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
@@ -382,3 +410,137 @@ def test_registry_reads_in_one_call(direct_vm, direct_deploy, direct_alice, dire
     assert [c.id for c in contract.get_claims(0, 200)] == [claim_id]
     assert contract.explain_claim(claim_id).startswith("BREACHED: NCT03548935: primary completion 2020-03-30 (actual).")
     assert contract.response_window_seconds() == 600
+
+
+# --- payout guarantees ------------------------------------------------------------
+
+
+@pytest.mark.parametrize("order", [("paper", "results"), ("results", "paper")])
+def test_concurrent_breaches_are_both_paid_in_full(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, order):
+    # The bond is exactly 2 x payout: both promises break at once and settle in either order.
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob, bond=8 * GEN, honor_delay_cert=False)
+    claims = {
+        "results": _file(direct_vm, contract, pledge_id, direct_charlie),
+        "paper": _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi=DOI, answer="MAIN_SWITCHED"),
+    }
+    assert json.loads(contract.totals()) == {"bonds": str(8 * GEN), "pending_stakes": str(8 * GEN // 10),
+                                             "expected_balance": str(8 * GEN + 8 * GEN // 10)}
+    for kind in order:
+        _expire(contract, claims[kind])
+        assert contract.settle(claims[kind]) == "paid"
+        last = json.loads(contract.get_claim(claims[kind]).timeline_json)[-1]
+        assert (last["beneficiary"], last["reporter"]) == (str(36 * GEN // 10), str(4 * GEN // 10))
+    p = contract.get_pledge(pledge_id)
+    assert (int(p.bond), int(p.total_paid), int(p.n_breached)) == (0, 8 * GEN, 2)
+    # conservation: everything bonded and staked left as payouts, rewards and returned stakes
+    assert int(p.total_bonded) + 2 * (4 * GEN // 10) == 2 * (36 * GEN // 10) + 2 * (4 * GEN // 10 + 4 * GEN // 10)
+    assert json.loads(contract.totals())["expected_balance"] == "0"
+    cov = json.loads(contract.coverage(pledge_id))
+    assert (cov["open_promises"], cov["liability"], cov["covered"]) == ([], "0", True)
+
+
+def test_coverage_tracks_open_promises(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob, bond=8 * GEN)
+    cov = json.loads(contract.coverage(pledge_id))
+    assert (cov["open_promises"], cov["liability"], cov["results_due"], cov["paper_covered_until"]) == (
+        ["results", "paper"], str(8 * GEN), "2022-03-30", "2027-12-31")
+    claim_id = _file(direct_vm, contract, pledge_id, direct_charlie)  # kept: results posted within the extended deadline
+    _expire(contract, claim_id)
+    contract.settle(claim_id)
+    cov = json.loads(contract.coverage(pledge_id))
+    assert (cov["open_promises"], cov["liability"], cov["bond"]) == (["paper"], str(4 * GEN), str(8 * GEN + 4 * GEN // 10))
+    assert "already been ruled kept" in _file(direct_vm, contract, pledge_id, direct_charlie)
+
+
+# --- coverage maturity --------------------------------------------------------------
+
+
+def test_bond_waits_for_the_results_obligation(direct_vm, direct_deploy, direct_alice, direct_bob):
+    estimated = _study(completion="2028-04", ctype="ESTIMATED", results="", cert="")
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob, nct="NCT07219953", study=estimated, expires="2030-06-01")
+    assert contract.get_pledge(pledge_id).results_due == "2030-04-30"
+    contract.pledges[pledge_id].expires = _days_ago(1)  # pretend coverage has run out
+    direct_vm.sender = direct_alice
+    # the completion estimate slipped: results are not due, so the bond stays
+    _setup(direct_vm, study=_study(completion="2031-06", ctype="ESTIMATED", results="", cert=""))
+    with direct_vm.expect_revert("the trial has not completed (primary completion 2031-06, estimated)"):
+        contract.withdraw(pledge_id)
+    # completed, but the deadline and its report period are still running
+    _setup(direct_vm, study=_study(completion=_days_ago(100), results="", cert=""))
+    with direct_vm.expect_revert("results are due"):
+        contract.withdraw(pledge_id)
+    _setup(direct_vm, ct_status=503)
+    with direct_vm.expect_revert("ClinicalTrials.gov could not be read"):
+        contract.withdraw(pledge_id)
+    _setup(direct_vm, study=_study(completion=_days_ago(500), results="", cert=""))
+    assert contract.withdraw(pledge_id) == str(10 * GEN)
+
+
+def test_bond_unlocks_when_results_are_posted_or_at_the_backstop(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob)
+    contract.pledges[pledge_id].expires = "2020-01-01"  # backstop 2022-12-31 has passed: no registry read needed
+    _setup(direct_vm, ct_status=503)
+    direct_vm.sender = direct_alice
+    assert contract.withdraw(pledge_id) == str(10 * GEN)
+    assert json.loads(contract.get_pledge(pledge_id).history_json)[-1]["why"] == "backstop 2022-12-31 passed"
+
+
+# --- one publication obligation ---------------------------------------------------------
+
+
+def test_the_publication_promise_is_one_obligation(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob)
+    other = "10.1016/s0140-6736(21)00213-0"
+    first = _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi=DOI, answer="NOT_MAIN_REPORT")
+    assert _file(direct_vm, contract, pledge_id, direct_bob, kind="paper", doi=other) == f"REFUNDED: {first} is already open for this promise"
+    _expire(contract, first)
+    contract.settle(first)
+    assert f"{DOI} has already been ruled on" in _file(direct_vm, contract, pledge_id, direct_bob, kind="paper", doi=DOI)
+    second = _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi=other, answer="MAIN_SWITCHED")
+    _expire(contract, second)
+    assert contract.settle(second) == "paid"
+    assert contract.get_pledge(pledge_id).main_doi == other
+    assert "This promise has already been paid" in _file(direct_vm, contract, pledge_id, direct_bob, kind="paper", doi="10.1056/nejmoa9999999")
+
+
+def test_once_the_main_report_is_known_other_dois_are_refused(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob)
+    claim_id = _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi=DOI, answer="MAIN_CHANGE_DISCLOSED")
+    _expire(contract, claim_id)
+    contract.settle(claim_id)
+    assert contract.get_pledge(pledge_id).main_doi == DOI
+    assert f"already identified as {DOI}" in _file(direct_vm, contract, pledge_id, direct_bob, kind="paper", doi="10.1056/nejmoa2032183x")
+
+
+# --- evidence ------------------------------------------------------------------------
+
+
+def test_every_assessment_keeps_an_evidence_packet(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract, pledge_id = _pledge(direct_vm, direct_deploy, direct_alice, direct_bob, honor_delay_cert=False)
+    results = contract.get_claim(_file(direct_vm, contract, pledge_id, direct_charlie))
+    packet = json.loads(results.evidence_json)[0]
+    fields = {"completion": "2020-03-30", "completion_type": "ACTUAL", "results_posted": "2021-08-11", "delay_cert": "2021-03-03"}
+    assert packet["fields"] == fields and packet["fields_sha256"] == _sha(json.dumps(fields, sort_keys=True))
+    assert (packet["last_update_posted"], packet["version_holder"], packet["status"]) == ("2024-05-02", "2025-10-17", 200)
+    assert packet["record"] == f"https://clinicaltrials.gov/study/{NCT}"
+
+    paper_id = _file(direct_vm, contract, pledge_id, direct_charlie, kind="paper", doi=DOI, answer="MAIN_SWITCHED")
+    first = json.loads(contract.get_claim(paper_id).evidence_json)[0]
+    abstract = first["abstract"]
+    assert abstract.startswith("Background Obesity") and first["abstract_sha256"] == _sha(abstract)
+    assert first["registered_outcomes_sha256"] == _sha(contract.get_pledge(pledge_id).outcomes_json)
+    assert (first["pmid"], first["record"], first["linkage"]["hits"]) == ("33567185", "https://europepmc.org/article/MED/33567185", 1)
+    # The pledger's statement claims a disclosure the publication does not contain: it is stored and hashed, the ruling stands.
+    statement = "<p>The change of primary end point was approved by the regulator.</p>"
+    _setup(direct_vm, answer="MAIN_SWITCHED", statement=statement)
+    direct_vm.sender = direct_alice
+    assert contract.contest(paper_id, STATEMENT_URL) == "BREACHED"
+    claim = contract.get_claim(paper_id)
+    packets = json.loads(claim.evidence_json)
+    text = "The change of primary end point was approved by the regulator."
+    assert len(packets) == 2 and packets[1]["statement"] == {"url": STATEMENT_URL, "sha256": _sha(text), "chars": len(text), "excerpt": text}
+    steps = json.loads(claim.timeline_json)
+    assert [s["evidence"] for s in steps] == [p["packet_sha256"] for p in packets]
+    for p in packets:
+        body = {k: v for k, v in p.items() if k != "packet_sha256"}
+        assert p["packet_sha256"] == _sha(json.dumps(body, sort_keys=True))

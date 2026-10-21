@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
-import { formatGen, outcomesOf, sameAddress, todayUtc, trialUrl, type Claim, type Pledge, type TrialLookup } from "@/lib/contracts/types";
+import { coverageOf, doiUrl, formatGen, outcomesOf, sameAddress, todayUtc, trialUrl, type Claim, type Pledge, type TrialLookup } from "@/lib/contracts/types";
 import { formatAddress, useWallet } from "@/lib/genlayer/wallet";
 import { usePledgeWrite } from "@/lib/hooks/useTrialPledge";
 import { ClaimCard } from "./ClaimCard";
@@ -24,6 +24,8 @@ export function TrialCard({ pledge, claims }: { pledge: Pledge; claims: Claim[] 
   const outcomes = outcomesOf(pledge);
   const open = claims.filter((c) => c.state === "pending");
   const done = claims.filter((c) => c.state !== "pending").reverse();
+  const cov = coverageOf(pledge);
+  const PROMISE_NAME = { results: "results on time", paper: "main paper as registered" } as const;
 
   return (
     <article className="brand-card overflow-hidden">
@@ -68,6 +70,35 @@ export function TrialCard({ pledge, claims }: { pledge: Pledge; claims: Claim[] 
           <div className="h-16 rounded-xl bg-muted/50 animate-pulse" />
         )}
 
+        {active && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-muted-foreground">Still payable</p>
+              <p className="font-medium">
+                {cov.open.length ? cov.open.map((k) => PROMISE_NAME[k]).join(" · ") : "nothing: both promises are settled"}
+              </p>
+              <p className={cov.covered ? "text-[#0B7F70]" : "text-[#B83A26]"}>
+                liability {formatGen(cov.liability)} GEN, bond {formatGen(pledge.bond)} GEN: {cov.covered ? "every confirmed breach is paid in full" : "under-covered"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-muted-foreground">Results promise</p>
+              <p className="font-medium">due by {pledge.results_due} at the latest</p>
+              <p className="text-muted-foreground">completion at pledging {pledge.completion_at_pledge}</p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-muted-foreground">Bond locked</p>
+              <p className="font-medium">until {pledge.expires} and the results promise matures</p>
+              <p className="text-muted-foreground">
+                paper watched until {pledge.expires}
+                {pledge.main_doi && (
+                  <>; main report <a href={doiUrl(pledge.main_doi)} target="_blank" rel="noopener noreferrer" className="mono text-[#0B7F70] hover:underline">{pledge.main_doi}</a></>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         <details className="text-sm">
           <summary className="cursor-pointer text-muted-foreground">Registered primary outcomes, frozen at pledging ({outcomes.length})</summary>
           <ul className="mt-2 list-disc pl-5 space-y-1">
@@ -82,17 +113,17 @@ export function TrialCard({ pledge, claims }: { pledge: Pledge; claims: Claim[] 
           <span>paid out <strong className="text-foreground">{formatGen(pledge.total_paid)} GEN</strong></span>
           <span>pledger <span className="mono">{formatAddress(pledge.pledger)}</span>{isPledger && " (you)"}</span>
           <span>beneficiary <span className="mono">{formatAddress(pledge.beneficiary)}</span></span>
-          <span>open until {pledge.expires}</span>
+          <span>backstop {cov.backstop}</span>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {active && todayUtc() <= pledge.expires && <FileClaimModal pledge={pledge} claims={claims} trial={trial} />}
+          {active && cov.open.length > 0 && <FileClaimModal pledge={pledge} claims={claims} trial={trial} />}
           {isPledger && active && (
             <Button
               size="sm"
               variant="ghost"
               disabled={todayUtc() <= pledge.expires || open.length > 0 || pending === `withdraw:${pledge.id}`}
-              title={todayUtc() <= pledge.expires ? `Locked until the pledge expires on ${pledge.expires}.` : open.length ? "Settle the open claims first." : ""}
+              title={todayUtc() <= pledge.expires ? `Locked until the pledge expires on ${pledge.expires}.` : open.length ? "Settle the open claims first." : "Validators check ClinicalTrials.gov: the bond leaves once the results promise has matured."}
               onClick={() => write({ kind: "withdraw", pledgeId: pledge.id })}
             >
               Withdraw bond

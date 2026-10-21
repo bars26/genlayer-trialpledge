@@ -93,6 +93,8 @@ export default function HomePage() {
                 <h3 className="display text-lg font-semibold">How a ruling is made</h3>
                 <p><strong>Results on time?</strong> Decided in code from ClinicalTrials.gov: primary completion (must be actual), results first-posted date, and a delay certification if the pledge counts it.</p>
                 <p><strong>Outcome as registered?</strong> Code first checks Europe PMC links the paper to the trial and has an abstract. Then validators compare the abstract with the primary outcomes frozen in the pledge: main report as registered, outcome changed, or not the main report.</p>
+                <p><strong>Always paid in full.</strong> The bond covers both promises (2 × payout), each promise pays once, and the main paper is one obligation however many DOIs are reported. The bond stays until the results promise has matured, checked again on ClinicalTrials.gov.</p>
+                <p><strong>Evidence kept.</strong> Every ruling stores what validators read: the registry fields and record version, or the exact abstract, with sha256 hashes. A ruling about the outcome needs the abstract to name its primary outcome; a 404 or an unindexed paper decides nothing.</p>
                 <p><strong>Fair play.</strong> Only the side a ruling goes against can ask for a second look, once, within 10 minutes. Nobody can rush a payout in their own favour. If a source is down, nothing is decided and the stake comes back.</p>
               </div>
               <TransactionPanel />

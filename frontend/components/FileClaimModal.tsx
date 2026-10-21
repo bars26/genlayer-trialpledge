@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BookOpen, Clock, Loader2 } from "lucide-react";
-import { DOI_RE, formatGen, normDoi, parseJson, stakeFor, type Claim, type Pledge, type TrialLookup } from "@/lib/contracts/types";
+import { DOI_RE, formatGen, normDoi, parseJson, stakeFor, todayUtc, type Claim, type Pledge, type TrialLookup } from "@/lib/contracts/types";
 import { usePledgeWrite } from "@/lib/hooks/useTrialPledge";
 import { useWallet } from "@/lib/genlayer/wallet";
 import { Button } from "./ui/button";
@@ -22,16 +22,27 @@ export function FileClaimModal({ pledge, claims, trial }: { pledge: Pledge; clai
   const [paper, setPaper] = useState<Paper | null>(null);
   const [checking, setChecking] = useState(false);
   const stake = stakeFor(pledge);
+  // The same rules the contract applies; a claim it would refund is blocked here with the reason.
   const paid = parseJson<string[]>(pledge.paid_json, []);
-  const key = kind === "results" ? "results" : `paper:${normDoi(doi)}`;
-  const openClaim = claims.find((c) => c.state === "pending" && (c.kind === "results" ? "results" : `paper:${c.doi}`) === key);
-  const blocked = paid.includes(key)
-    ? "This has already been paid from this pledge."
-    : openClaim
-      ? `${openClaim.id} is already open for this; follow it on the card.`
-      : kind === "results" && trial && (trial.status === "not_due" || trial.status === "not_completed")
-        ? "Nothing is due yet: the contract would refund the claim."
-        : "";
+  const resolved = parseJson<string[]>(pledge.resolved_json, []);
+  const ruled = parseJson<string[]>(pledge.ruled_dois_json, []);
+  const d = normDoi(doi);
+  const openClaim = claims.find((c) => c.state === "pending" && c.kind === kind);
+  const blocked = paid.includes(kind)
+    ? "This promise has already been paid from this pledge (each promise pays once)."
+    : resolved.includes(kind)
+      ? "This promise has already been ruled kept."
+      : openClaim
+        ? `${openClaim.id} is already open for this promise; follow it on the card.`
+        : kind === "paper" && todayUtc() > pledge.expires
+          ? `The publication promise was covered until ${pledge.expires}.`
+          : kind === "paper" && pledge.main_doi && d && d !== pledge.main_doi
+            ? `Validators already identified the main results report as ${pledge.main_doi}; the publication promise covers that one paper.`
+            : kind === "paper" && d && ruled.includes(d)
+              ? `${d} has already been ruled on for this pledge.`
+              : kind === "results" && trial && (trial.status === "not_due" || trial.status === "not_completed")
+                ? "Nothing is due yet: the contract would refund the claim."
+                : "";
   const validDoi = kind === "results" || DOI_RE.test(doi.trim());
 
   const checkPaper = async () => {
@@ -98,7 +109,12 @@ export function FileClaimModal({ pledge, claims, trial }: { pledge: Pledge; clai
             {paper && (
               <div className="rounded-lg bg-muted/60 p-3 text-xs space-y-1">
                 {paper.error && <p className="text-[#B83A26]">{paper.error}</p>}
-                {paper.found === false && <p className="text-[#B83A26]">Europe PMC has no record of this DOI; the claim would be ruled not covered.</p>}
+                {paper.found === false && (
+                  <p className="text-[#A6640F]">
+                    Europe PMC has no record of this DOI. If doi.org knows it, validators treat that as an indexing delay and your stake comes back;
+                    if the DOI does not exist, the claim is ruled not covered.
+                  </p>
+                )}
                 {paper.found && (
                   <>
                     <p className="font-medium">{paper.title}</p>
@@ -106,7 +122,12 @@ export function FileClaimModal({ pledge, claims, trial }: { pledge: Pledge; clai
                     <p className={paper.linked ? "text-[#0B7F70]" : "text-[#B83A26]"}>
                       {paper.linked ? `Linked to ${pledge.nct} in Europe PMC.` : `Not linked to ${pledge.nct}: the claim would be ruled not covered.`}
                     </p>
-                    {paper.linked && <p className="text-muted-foreground">Validators will compare its abstract ({paper.abstract_chars} characters) with the registered primary outcomes frozen in the pledge.</p>}
+                    {paper.linked && (
+                      <p className="text-muted-foreground">
+                        Validators will compare its abstract ({paper.abstract_chars} characters) with the registered primary outcomes frozen in the pledge.
+                        A kept or broken ruling needs the abstract to name its primary outcome; otherwise nothing is decided and your stake comes back.
+                      </p>
+                    )}
                   </>
                 )}
               </div>

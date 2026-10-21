@@ -1,10 +1,10 @@
 {
-  "contract": "0x9dd109BeAaB9edCF011C28F0d82A7B87fE25927a",
+  "contract": "0x1A9e92B1Fad92F55D493dda45cfF11E85FA75762",
   "accounts": {
-    "pledger": "0x5b5B0e2672BBa68eD38cF25922A26206F6361d7A",
-    "reporter": "0x5D5c54D9d87F16BC6cb301912EEf3B97bDc81003",
-    "fund": "0x855B7e6C392D901a23f66dA129CD05669Ba457A6",
-    "bystander": "0xf8915d1295E9196EB6f73e4aBA42fD3BFBEa22F4"
+    "pledger": "0xc5112339b20Ee813A22273aB8e46885595De9aE0",
+    "reporter": "0xFA0C43b8615938C97D84F2108253fABf1D5D6BfA",
+    "fund": "0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8",
+    "bystander": "0xE17483F0BB379f33fE583677c4e3ef8C5C655B57"
   },
   "pledges": [
     "pledge_0",
@@ -20,32 +20,219 @@
     "claim_3",
     "claim_4",
     "claim_5",
-    "claim_6"
+    "claim_6",
+    "claim_7",
+    "claim_8"
   ],
+  "coverages": {
+    "pledge_0": {
+      "bond": "7000000000000000000",
+      "covered": true,
+      "liability": "0",
+      "locked_until": "2027-12-31 and until the results promise matures (at the latest 2030-12-30)",
+      "main_doi": "10.1056/nejmoa2032183",
+      "open_promises": [],
+      "paper_covered_until": "2027-12-31",
+      "payout": "2000000000000000000",
+      "pending_claims": 0,
+      "results_due": "2022-03-30"
+    },
+    "pledge_1 with two open claims": {
+      "bond": "4000000000000000000",
+      "covered": true,
+      "liability": "4000000000000000000",
+      "locked_until": "2027-12-31 and until the results promise matures (at the latest 2030-12-30)",
+      "main_doi": "",
+      "open_promises": [
+        "results",
+        "paper"
+      ],
+      "paper_covered_until": "2027-12-31",
+      "payout": "2000000000000000000",
+      "pending_claims": 2,
+      "results_due": "2021-03-30"
+    },
+    "pledge_4": {
+      "bond": "4000000000000000000",
+      "covered": true,
+      "liability": "4000000000000000000",
+      "locked_until": "2030-12-31 and until the results promise matures (at the latest 2033-12-30)",
+      "main_doi": "",
+      "open_promises": [
+        "results",
+        "paper"
+      ],
+      "paper_covered_until": "2030-12-31",
+      "payout": "2000000000000000000",
+      "pending_claims": 0,
+      "results_due": "2030-04-30"
+    }
+  },
+  "reconciliations": [
+    {
+      "label": "two claims open on pledge P1",
+      "bonds": "11000000000000000000",
+      "pending_stakes": "400000000000000000",
+      "expected": "11400000000000000000",
+      "balance": "11400000000000000000",
+      "ok": true
+    },
+    {
+      "label": "after P1 settles",
+      "bonds": "9200000000000000000",
+      "pending_stakes": "0",
+      "expected": "9200000000000000000",
+      "balance": "9200000000000000000",
+      "ok": true
+    },
+    {
+      "label": "P2 and P3 claims open",
+      "bonds": "21200000000000000000",
+      "pending_stakes": "400000000000000000",
+      "expected": "21600000000000000000",
+      "balance": "21600000000000000000",
+      "ok": true
+    },
+    {
+      "label": "end of run",
+      "bonds": "17200000000000000000",
+      "pending_stakes": "0",
+      "expected": "17200000000000000000",
+      "balance": "17200000000000000000",
+      "ok": true
+    }
+  ],
+  "evidence": {
+    "claim_0": [
+      {
+        "packet_sha256": "eb384a513f6db685419601a709cb23002d662465f26f49d0ab5a207a39ba08b3",
+        "record": "https://clinicaltrials.gov/study/NCT03548935",
+        "fields_sha256": "b870b2293b5f764d4e38583736a7e156f2743dcc1e2894b036ea57230777a42c",
+        "version_holder": "2026-10-20",
+        "read_at": "2026-10-21T07:48:28"
+      }
+    ],
+    "claim_1": [
+      {
+        "packet_sha256": "c9e2d6a7e03214cef6b27c2712c4d79c0f032d374826b97cff838d4408b37072",
+        "record": "https://europepmc.org/article/MED/36876594",
+        "abstract_sha256": "8b963a0c708f544ed9eac0f681905237fb8a8cbe84114f16d3cd042a82f9648a",
+        "read_at": "2026-10-21T07:48:58"
+      }
+    ],
+    "claim_2": [
+      {
+        "packet_sha256": "fd3e63c62e2463bc65c9ca319d6ec98901d2942dc93179452c60c75e75f2f018",
+        "record": "https://europepmc.org/article/MED/36997637",
+        "abstract_sha256": "9da5739e7a655ab3947e136d2f7853cecb00c580d5a7779a381639093c538dec",
+        "read_at": "2026-10-21T07:49:26"
+      }
+    ],
+    "claim_3": [
+      {
+        "packet_sha256": "f9ac40f51c3cd6b587efa011f1f674cc9bfa1d51e767799da02f0f11d2bcfe4c",
+        "read_at": "2026-10-21T07:49:53"
+      }
+    ],
+    "claim_4": [
+      {
+        "packet_sha256": "08a6281243ef2ff9267776da0d0ee1f7485d3a5757256c327a0f8b55c1deb112",
+        "record": "https://europepmc.org/article/MED/33567185",
+        "abstract_sha256": "acbb2f50f36e6e8249f2e7e36d638c5932187f3a5bad0759e726bb132693f20e",
+        "read_at": "2026-10-21T07:50:26"
+      },
+      {
+        "packet_sha256": "318bc46382b0e8621f0230fb29b46391f16724fccd70c6cde039657adfa4c545",
+        "record": "https://europepmc.org/article/MED/33567185",
+        "abstract_sha256": "acbb2f50f36e6e8249f2e7e36d638c5932187f3a5bad0759e726bb132693f20e",
+        "read_at": "2026-10-21T07:51:00"
+      }
+    ],
+    "claim_5": [
+      {
+        "packet_sha256": "a98096512fd40b28a4049564f8ce4f4360bb9d8975cfafc8e6de17e7d782973e",
+        "record": "https://clinicaltrials.gov/study/NCT03548935",
+        "fields_sha256": "b870b2293b5f764d4e38583736a7e156f2743dcc1e2894b036ea57230777a42c",
+        "version_holder": "2026-10-20",
+        "read_at": "2026-10-21T07:51:51"
+      }
+    ],
+    "claim_6": [
+      {
+        "packet_sha256": "c92d49ae77d54ff9ecc02d2f58fd7b3fa3a24e37f30ede5b35442e7e32b9178d",
+        "record": "https://europepmc.org/article/MED/33567185",
+        "abstract_sha256": "acbb2f50f36e6e8249f2e7e36d638c5932187f3a5bad0759e726bb132693f20e",
+        "read_at": "2026-10-21T07:52:05"
+      }
+    ],
+    "claim_7": [
+      {
+        "packet_sha256": "e3b3383050ac9aaf5a9f9900b4d847e5d302f8e17bec809ac81de9cc1df53c17",
+        "record": "https://clinicaltrials.gov/study/NCT04636229",
+        "fields_sha256": "8e4bc1ba40ee1a45f953c4d115aa2b973b4110b3b6c4e8a56c48d872c3f0d24b",
+        "version_holder": "2026-10-20",
+        "read_at": "2026-10-21T07:55:03"
+      },
+      {
+        "packet_sha256": "d946949e0ca51e9eb3f699e0a3d310bd59390b5e8332ee0201808a9452de89a9",
+        "record": "https://clinicaltrials.gov/study/NCT04636229",
+        "fields_sha256": "8e4bc1ba40ee1a45f953c4d115aa2b973b4110b3b6c4e8a56c48d872c3f0d24b",
+        "version_holder": "2026-10-20",
+        "read_at": "2026-10-21T07:55:19"
+      }
+    ],
+    "claim_8": [
+      {
+        "packet_sha256": "660bf00e24617e7e65ea6c9a148f5d46111c44b8adbddbd6f59a8944f2d62286",
+        "record": "https://clinicaltrials.gov/study/NCT05608343",
+        "fields_sha256": "35fa830821cc6dbf7db62854e33296f89e5d383c1d960b41d2bd0c9246cb0ca0",
+        "version_holder": "2026-10-20",
+        "read_at": "2026-10-21T07:55:59"
+      }
+    ]
+  },
   "log": [
     {
       "who": "pledger",
-      "call": "create_pledge(\"NCT123\", 365, true, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2027-12-31\")",
+      "call": "create_pledge(\"NCT123\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
       "value": "6",
-      "hash": "0x923077a1e6bb97ab8e4a6249e3e263d3ae92744cd7d6f45f15c796933f03c205",
+      "hash": "0xdfe6e93f9c9cf7927f1844e65e4795ae4a368d84febe8f96e8ba1933d5960d38",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "REFUNDED: nct must be a ClinicalTrials.gov id like NCT03548935"
     },
     {
       "who": "pledger",
-      "call": "create_pledge(\"NCT99999999\", 365, true, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2027-12-31\")",
+      "call": "create_pledge(\"NCT99999999\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
       "value": "6",
-      "hash": "0x7176b0aec2f9c1fd44abf3a71e127805f55d4c72ed73ea34189ea959ce3d1158",
+      "hash": "0x8aa430e282a39cf423bf38818b21452f93b245f00bff8f79757c473dea481c84",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "REFUNDED: NCT99999999 is not on ClinicalTrials.gov"
     },
     {
       "who": "pledger",
-      "call": "create_pledge(\"NCT03548935\", 365, true, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2027-12-31\")",
+      "call": "create_pledge(\"NCT03548935\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
+      "value": "3",
+      "hash": "0x3e7fe22fc2250a587f3a40f7b94804c1c38b09488dbe8f7528b07ef619ba7a3c",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "REFUNDED: the bond must cover both promises: at least 2 x payout"
+    },
+    {
+      "who": "pledger",
+      "call": "create_pledge(\"NCT07219953\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2029-12-31\")",
+      "value": "4",
+      "hash": "0x0bf11559e9fd1e2bbb848977204644386137d681f8ad6649f612bb670e1ee499",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "REFUNDED: expires must be 2030-05-30 or later: the latest results deadline (2030-04-30) plus 30 days to report"
+    },
+    {
+      "who": "pledger",
+      "call": "create_pledge(\"NCT03548935\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
       "value": "6",
-      "hash": "0x392a491b73a6825f83a093296206c9af7b909f1a452e5784f4a3853a26c44676",
+      "hash": "0x72ded7de5766166cac89290a8ea75cda8cb58493d1f97b2416dcf7126b97c996",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "pledge_0"
@@ -54,7 +241,7 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_0\", \"results\", \"\")",
       "value": "1",
-      "hash": "0xd9510a157b8eee7a427ef5ad5dec520316a95c1ae80fa6c212e4adfa884866f7",
+      "hash": "0x75202efcbdcf1172bf40990df55cf6ee0f7e4d477e2b203c0ae0131b8c67bc48",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "REFUNDED: A claim on this pledge stakes exactly 200000000000000000 wei (10% of the payout)"
@@ -63,7 +250,7 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_0\", \"results\", \"\")",
       "value": "0.2",
-      "hash": "0x8cdd3874de260ac7760f793582b9044c2b3625255bc7810c92ab6fef520ffaf2",
+      "hash": "0xb743a111069968dbf61edc00221782a1328bc33c6551faeb3234f30599037f8e",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "claim_0"
@@ -72,61 +259,34 @@
       "who": "reporter",
       "call": "settle(\"claim_0\")",
       "value": "0",
-      "hash": "0x4faa6cb562e491e79cf12389d375fc755990ed046776a282b03d70bbd2ff0352",
+      "hash": "0xbab85b26284835d2c7209ee3cb0db151e4bdebdafd3e781ccc9468e40cf8a8c7",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "stake_to_bond"
     },
     {
       "who": "reporter",
-      "call": "file_claim(\"pledge_0\", \"paper\", \"10.1056/NEJMoa2032183\")",
+      "call": "file_claim(\"pledge_0\", \"results\", \"\")",
       "value": "0.2",
-      "hash": "0xab5640ee995d25b62fbbe12d040ef95700e2a427544b0b1be262f2ecb8085870",
+      "hash": "0x5bd1fbca2093c1233db6370e39792565adcf31e89abc3ea22774e64976e3ea94",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
-      "returned": "claim_1"
-    },
-    {
-      "who": "pledger",
-      "call": "settle(\"claim_1\")",
-      "value": "0",
-      "hash": "0x6f0c9a9f132932fd28416ca2bea71125a33c8c1c25cef4aa25ffd0bf7b87c381",
-      "status": "ACCEPTED",
-      "exec": "ERROR",
-      "refused": "The response window is still open; only the claimant can accept early"
-    },
-    {
-      "who": "reporter",
-      "call": "contest(\"claim_1\", \"\")",
-      "value": "0",
-      "hash": "0xabcd7522bf8f5c860870ac5593e2f171be7b0493c47b925f5f5f137566db78f0",
-      "status": "ACCEPTED",
-      "exec": "SUCCESS",
-      "returned": "KEPT"
-    },
-    {
-      "who": "reporter",
-      "call": "settle(\"claim_1\")",
-      "value": "0",
-      "hash": "0x6bd6447dd62c176916cdcb4a79fbe93c109cc584485c111dbf35e6e6e9b9daa7",
-      "status": "ACCEPTED",
-      "exec": "SUCCESS",
-      "returned": "stake_to_bond"
+      "returned": "REFUNDED: This promise has already been ruled kept"
     },
     {
       "who": "reporter",
       "call": "file_claim(\"pledge_0\", \"paper\", \"10.1002/oby.23732\")",
       "value": "0.2",
-      "hash": "0x7c22523eb611262a2d3d21a28c534c3f732c4476c7caf0fb9b8be325d60f3f2e",
+      "hash": "0xb619f6c8a16e3c62348ac7ed813bd40146bc729119975e47ad2e3857507a2efc",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
-      "returned": "claim_2"
+      "returned": "claim_1"
     },
     {
       "who": "reporter",
-      "call": "settle(\"claim_2\")",
+      "call": "settle(\"claim_1\")",
       "value": "0",
-      "hash": "0x26528b547b80454429b6c03f11cf6d050f1b05d86c4a07b4903d86ce9ceecaf1",
+      "hash": "0x1fc3551258c3a3bb2c47ef291ecf4f3c15c7322c32d1dbbf26b0e24d78a9c27a",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "stake_to_bond"
@@ -135,7 +295,25 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_0\", \"paper\", \"10.1038/s42003-023-04722-4\")",
       "value": "0.2",
-      "hash": "0x89c58afa464cd4fe2476f7f8ca86e3a58db9a6afb1eca65732c2acda9971faa4",
+      "hash": "0x37214da8d436c949af72ba0f7eae0ebb734a1a912218bd502f1b5370a991cbc1",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "claim_2"
+    },
+    {
+      "who": "reporter",
+      "call": "settle(\"claim_2\")",
+      "value": "0",
+      "hash": "0x73281b94009202fb633577a002567ea067eb95223a51b2e26f4b1185052c853b",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "stake_to_bond"
+    },
+    {
+      "who": "reporter",
+      "call": "file_claim(\"pledge_0\", \"paper\", \"10.1056/NEJMoa9999999\")",
+      "value": "0.2",
+      "hash": "0xde9961785bcc4b85430ddf37a74d1d42f4cc754a3709f5e9bf09ef8a4f506253",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "claim_3"
@@ -144,16 +322,61 @@
       "who": "reporter",
       "call": "settle(\"claim_3\")",
       "value": "0",
-      "hash": "0x787c299aec01bc7b469a839398909bfc72d4dbad8f3a30d496ce163795ff1a3f",
+      "hash": "0x210772cb2afdaac2d81b603e0161d868f7998cda1b760300f86457fbd92e3191",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "stake_to_bond"
     },
     {
+      "who": "reporter",
+      "call": "file_claim(\"pledge_0\", \"paper\", \"10.1056/NEJMoa2032183\")",
+      "value": "0.2",
+      "hash": "0x24bd71296bfe8ae4101edc069c41f54911d58439a07b7e7d3670235ec227d3a1",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "claim_4"
+    },
+    {
       "who": "pledger",
-      "call": "create_pledge(\"NCT03548935\", 365, false, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2027-12-31\")",
+      "call": "settle(\"claim_4\")",
+      "value": "0",
+      "hash": "0xfc0a884a80dd8e7f64d436eb066d3d8a4e31ed20eb61e40f796bda37f8423e5c",
+      "status": "ACCEPTED",
+      "exec": "ERROR",
+      "refused": "The response window is still open; only the claimant can accept early"
+    },
+    {
+      "who": "reporter",
+      "call": "contest(\"claim_4\", \"\")",
+      "value": "0",
+      "hash": "0x89cb6fc29d2f638889e0d3a55d77f28d6e6eef1df5ea8ec401a2c2770fecc3ca",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "KEPT"
+    },
+    {
+      "who": "reporter",
+      "call": "settle(\"claim_4\")",
+      "value": "0",
+      "hash": "0x7210aca581fbf7cc6045c6bf6d2ab1ca1a8de55c7c26b067f3bb1f96549862ad",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "stake_to_bond"
+    },
+    {
+      "who": "reporter",
+      "call": "file_claim(\"pledge_0\", \"paper\", \"10.1002/oby.23732\")",
+      "value": "0.2",
+      "hash": "0xf4023285cabee7709703cfa951a442d4f8435af101f2a34e4f72077c29221dcc",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "REFUNDED: This promise has already been ruled kept"
+    },
+    {
+      "who": "pledger",
+      "call": "create_pledge(\"NCT03548935\", 365, false, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
       "value": "4",
-      "hash": "0xabd70c285b6c34859c6d47eb506ec1adae563bdee511e3107ee47debae5bc1b1",
+      "hash": "0xde493ebc5933fc80ea4c1477fc77b5a3ca61a9533ea7962d2b805502f9d81b5b",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "pledge_1"
@@ -162,52 +385,79 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_1\", \"results\", \"\")",
       "value": "0.2",
-      "hash": "0xd4c989efba5dff7c48d5eef459a693da352163e89ad03700b2169adc7be6d455",
+      "hash": "0xf70c04b5b5cebce27a60c5783e3a028836ef17bc953ed92f7d54128640dc0170",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
-      "returned": "claim_4"
+      "returned": "claim_5"
     },
     {
       "who": "reporter",
-      "call": "settle(\"claim_4\")",
+      "call": "file_claim(\"pledge_1\", \"paper\", \"10.1056/NEJMoa2032183\")",
+      "value": "0.2",
+      "hash": "0xc7d59af03c7edf6c09f4f7b88e1b48ab5b5cb3d9506a1c67fd8a2f73d677ac08",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "claim_6"
+    },
+    {
+      "who": "reporter",
+      "call": "file_claim(\"pledge_1\", \"paper\", \"10.1002/oby.23732\")",
+      "value": "0.2",
+      "hash": "0xa4f35f1e9cd20aad9106c095ff75b0c21109d2aa8077154945a2b7e6c0425b1a",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "REFUNDED: claim_6 is already open for this promise"
+    },
+    {
+      "who": "reporter",
+      "call": "settle(\"claim_5\")",
       "value": "0",
-      "hash": "0xab15eaac1b6e1916307417a70a54b7bbd9a8925937667cd19162ad4eb631a81b",
+      "hash": "0x78d66793845d5589218ceb4efb43f059f4667f1311cef3139b8e4c482d7c0418",
       "status": "ACCEPTED",
       "exec": "ERROR",
       "refused": "The response window is still open; only the pledger can concede early"
     },
     {
       "who": "fund",
-      "call": "settle(\"claim_4\")",
+      "call": "settle(\"claim_5\")",
       "value": "0",
-      "hash": "0xbaa89c40bd0c4373684f877abce943a9187700c5878c60d640c09cf0088545aa",
+      "hash": "0x34870a7ec42032072cb331126292961ebcfc36d020ade0b1bbc97f75aef6a52b",
       "status": "ACCEPTED",
       "exec": "ERROR",
       "refused": "The response window is still open; only the pledger can concede early"
     },
     {
       "who": "pledger",
-      "call": "settle(\"claim_4\")",
+      "call": "settle(\"claim_5\")",
       "value": "0",
-      "hash": "0x5c09e7d73a7ac9696c7221f8146c35ef4a17e539a61f622b090f67555061293f",
+      "hash": "0x86ab6016818d9893b673f999fccda3d521e6bc35a2dfaaffa9323b2870c162cf",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "paid"
     },
     {
       "who": "reporter",
-      "call": "file_claim(\"pledge_1\", \"results\", \"\")",
-      "value": "0.2",
-      "hash": "0xdcde5b25e9b4832cf8e002a845fc1b0d17a78788cf504913a4cdc99e0999ccbb",
+      "call": "settle(\"claim_6\")",
+      "value": "0",
+      "hash": "0x089949789661d1a48fcfe40a926e917cf182c4a2c561c5ba0429c947372561fe",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
-      "returned": "REFUNDED: This has already been paid from this pledge"
+      "returned": "stake_to_bond"
+    },
+    {
+      "who": "reporter",
+      "call": "file_claim(\"pledge_1\", \"results\", \"\")",
+      "value": "0.2",
+      "hash": "0x3f9e81151f71fc2546731696d8f68380ba9f4f7513a3875827cf1c4eed943849",
+      "status": "ACCEPTED",
+      "exec": "SUCCESS",
+      "returned": "REFUNDED: This promise has already been paid from this pledge"
     },
     {
       "who": "pledger",
-      "call": "create_pledge(\"NCT04636229\", 365, true, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2027-12-31\")",
+      "call": "create_pledge(\"NCT04636229\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
       "value": "4",
-      "hash": "0x60373d9ec0681a5561cde73293a2f00727da35249d2785f3ed6fbd77d62ecdeb",
+      "hash": "0x4f5ef722bfc2249bf5833eecf4abaebf616497ef7b215a068eee6ffde81ae367",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "pledge_2"
@@ -216,25 +466,25 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_2\", \"results\", \"\")",
       "value": "0.2",
-      "hash": "0x896a0356ecd3d28d51bbe48973b5a80850231592cbd4ea6adbd3f12a2eaff647",
+      "hash": "0x1346bf1ee30a057426d8cf8aa8211811925e71de34d13bd70b9edb209a2ccdc5",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
-      "returned": "claim_5"
+      "returned": "claim_7"
     },
     {
       "who": "pledger",
-      "call": "contest(\"claim_5\", \"\")",
+      "call": "contest(\"claim_7\", \"\")",
       "value": "0",
-      "hash": "0x625c14fc0ddcc06e922d36b55416255882707fc2c03ad4c1ea19e482be9879fc",
+      "hash": "0xe0ebf545be608770426fc8f7a2b025e72cbe33797f117ceb601565b707a2351f",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "BREACHED"
     },
     {
       "who": "pledger",
-      "call": "create_pledge(\"NCT05608343\", 365, true, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2027-12-31\")",
+      "call": "create_pledge(\"NCT05608343\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2027-12-31\")",
       "value": "4",
-      "hash": "0x99ff2a15d4a1f484ec1fb7935a9818d8c47da869731479bcd3febe81c6033101",
+      "hash": "0x5ac7bbf8218004c47d1887a3459d0597b763ccfbbea9ced60e993c52e40bc477",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "pledge_3"
@@ -243,16 +493,16 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_3\", \"results\", \"\")",
       "value": "0.2",
-      "hash": "0x4cecfe4203e3892b211300773d6f68af39a404b66b4d77684efb0cea4717db17",
+      "hash": "0xeeb2b4705a72a74d059c5c37d11e2f9de907c5e53f357a7d7bac1ee60fae6ab5",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
-      "returned": "claim_6"
+      "returned": "claim_8"
     },
     {
       "who": "pledger",
-      "call": "create_pledge(\"NCT07219953\", 365, true, 2 GEN, \"0x855B7e6C392D901a23f66dA129CD05669Ba457A6\", \"2029-12-31\")",
+      "call": "create_pledge(\"NCT07219953\", 365, true, 2 GEN, \"0xc8Dafb988bf912556d119B0A20ed5C9ED64c86d8\", \"2030-12-31\")",
       "value": "4",
-      "hash": "0x6015b809b73f885da202b49a9bf9800965e40528c38dc11a11e0b832ec2e3403",
+      "hash": "0xb3d7a57722527ef5ce10e0c6f83ed218bbe37d8d4ab4bec5a8a39a70c70d1015",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "pledge_4"
@@ -261,34 +511,43 @@
       "who": "reporter",
       "call": "file_claim(\"pledge_4\", \"results\", \"\")",
       "value": "0.2",
-      "hash": "0xfa3003011a3c97cbb91b93ab57cbfe35f3c57302b2ffd4909f89490331cd2349",
+      "hash": "0x283447a6d63479f3904f7c56f352f1d888fdf88a63198969973b5844f41a661f",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "REFUNDED: NCT07219953: primary completion 2028-04 (estimated). The trial has not completed, so results are not due yet."
     },
     {
-      "who": "bystander",
-      "call": "settle(\"claim_5\")",
+      "who": "pledger",
+      "call": "withdraw(\"pledge_4\")",
       "value": "0",
-      "hash": "0x5674584b43abd92c62ba78c44aff5b2b6dbd0c1f76155ad3c143ea977478e9f0",
+      "hash": "0xb823809ba1e390c7c4187f71b61998df5e1e8b74adc668063231c0ad35c2a698",
+      "status": "ACCEPTED",
+      "exec": "ERROR",
+      "refused": "The bond stays until the pledge expires on 2030-12-31"
+    },
+    {
+      "who": "bystander",
+      "call": "settle(\"claim_7\")",
+      "value": "0",
+      "hash": "0xfaab59b0d9e3387a2b14ac0dca04e9627170b4e1bbe2db67374ab46589128561",
       "status": "ACCEPTED",
       "exec": "ERROR",
       "refused": "The response window is still open; only the pledger can concede early"
     },
     {
       "who": "bystander",
-      "call": "settle(\"claim_5\")",
+      "call": "settle(\"claim_7\")",
       "value": "0",
-      "hash": "0xb99851792eb7ec9ce21bff307ab64293d394442f99b44cb779eec4f561d69e42",
+      "hash": "0xcfa6098c8eeef9de5ec2f08ca05f3952eda9a6da8fd86333608f287d827ea1be",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "paid"
     },
     {
       "who": "bystander",
-      "call": "settle(\"claim_6\")",
+      "call": "settle(\"claim_8\")",
       "value": "0",
-      "hash": "0x38956b742b54a7f3a968e2fa9b613f29b50f00035cd54a64384bf776729285d6",
+      "hash": "0x8d2126b5172426c790d72dafde4eb343d6e563a82cc61b9e18898b5a9790c412",
       "status": "ACCEPTED",
       "exec": "SUCCESS",
       "returned": "paid"

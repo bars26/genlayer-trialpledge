@@ -16,6 +16,8 @@ export interface Pledge {
   payout: Num;
   beneficiary: string;
   expires: string;
+  completion_at_pledge: string;
+  results_due: string;
   state: "active" | "closed";
   bond: Num;
   total_bonded: Num;
@@ -23,6 +25,9 @@ export interface Pledge {
   stakes_kept: Num;
   pending: Num;
   paid_json: string;
+  resolved_json: string;
+  main_doi: string;
+  ruled_dois_json: string;
   claim_ids_json: string;
   n_breached: Num;
   n_kept: Num;
@@ -43,6 +48,7 @@ export interface Claim {
   verdict: Verdict;
   code: string;
   facts_json: string;
+  evidence_json: string;
   why: string;
   statement_url: string;
   pledger_contested: boolean;
@@ -65,6 +71,32 @@ export interface ClaimFacts {
   paper_title?: string;
   outcome_count?: number;
   answer?: string;
+  first_published?: string;
+  primary_named?: boolean;
+}
+
+/** One assessment's evidence packet: the exact sources and text validators read, with hashes. */
+export interface EvidencePacket {
+  source?: string;
+  record?: string;
+  status?: number;
+  read_at?: string;
+  packet_sha256?: string;
+  fields?: Record<string, string>;
+  fields_sha256?: string;
+  last_update_posted?: string;
+  version_holder?: string;
+  pmid?: string;
+  pmcid?: string;
+  journal?: string;
+  first_published?: string;
+  title?: string;
+  abstract?: string;
+  abstract_sha256?: string;
+  registered_outcomes_sha256?: string;
+  linkage?: { query: string; hits: number };
+  doi_handle?: { url: string; status: number };
+  statement?: { url: string; sha256: string; chars: number; excerpt: string };
 }
 
 export interface Outcome {
@@ -94,6 +126,7 @@ export interface TrialLookup {
 export interface TimelineStep {
   at: string;
   event: "filed" | "contested" | "settled";
+  evidence?: string;
   by?: string;
   before?: string;
   verdict?: string;
@@ -106,6 +139,9 @@ export interface TimelineStep {
 
 export const RESPONSE_WINDOW_SECONDS = 600;
 export const MIN_PAYOUT_WEI = 10n ** 18n;
+export const PROMISES = ["results", "paper"] as const;
+export const REPORT_DAYS = 30;
+export const BACKSTOP_DAYS = 1095;
 export const NCT_RE = /^NCT\d{8}$/i;
 export const DOI_RE = /^(https:\/\/doi\.org\/|doi:)?10\.\d{4,9}\/\S+$/i;
 
@@ -154,6 +190,16 @@ export const todayUtc = () => new Date().toISOString().slice(0, 10);
 export const factsOf = (c: Claim) => parseJson<ClaimFacts>(c.facts_json, {});
 export const timelineOf = (c: Claim) => parseJson<TimelineStep[]>(c.timeline_json, []);
 export const outcomesOf = (p: Pledge) => parseJson<Outcome[]>(p.outcomes_json, []);
+export const evidenceOf = (c: Claim) => parseJson<EvidencePacket[]>(c.evidence_json, []);
+
+/** Promises that can still pay (neither paid nor ruled kept) and the liability they carry; same rule as the contract. */
+export function coverageOf(p: Pledge) {
+  const done = new Set([...parseJson<string[]>(p.paid_json, []), ...parseJson<string[]>(p.resolved_json, [])]);
+  const open = p.state === "active" ? PROMISES.filter((k) => !done.has(k)) : [];
+  const liability = wei(p.payout) * BigInt(open.length);
+  const backstop = p.expires ? new Date(dayMs(p.expires) + BACKSTOP_DAYS * 86_400_000).toISOString().slice(0, 10) : "";
+  return { open, liability, free: wei(p.bond) - liability, covered: wei(p.bond) >= liability, backstop };
+}
 export const stakeFor = (p: Pledge) => wei(p.payout) / 10n;
 export const normDoi = (doi: string) => doi.trim().toLowerCase().replace(/^(https?:\/\/doi\.org\/|doi:)/, "");
 
@@ -194,6 +240,12 @@ export const CODE_LABEL: Record<string, string> = {
   late: "results late",
   missing: "no results",
   not_found: "trial not found",
+  registry_missing: "registry answered not found",
+  doi_not_registered: "DOI does not exist",
+  not_indexed: "not indexed yet",
+  recent_unlinked: "too recent to judge",
+  disclosed_change: "change disclosed in the paper",
+  insufficient_detail: "abstract names no primary outcome",
   unreachable: "source unreachable",
   reported_as_registered: "outcome as registered",
   switched: "primary outcome changed",
